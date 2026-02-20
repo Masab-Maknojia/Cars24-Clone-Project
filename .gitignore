@@ -1,0 +1,10 @@
+# --- Frontend (Node/Next.js) ---
+cars24/node_modules/
+cars24/.next/
+cars24/.env.local
+
+# --- Backend (C# / .NET) ---
+Cars24API/bin/
+Cars24API/obj/
+Cars24API/appsettings.Development.json
+Cars24API/firebase-service-account.json
