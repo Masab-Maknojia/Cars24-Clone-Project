@@ -1,5 +1,5 @@
-# 1. Use the official .NET 8 SDK image to build the app
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+# 1. Use the .NET 10.0 SDK image to build the app
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /app
 
 # 2. Copy the project file and install dependencies
@@ -10,8 +10,8 @@ RUN dotnet restore
 COPY . ./
 RUN dotnet publish -c Release -o out
 
-# 4. Use the lighter runtime image for the final deployment
-FROM mcr.microsoft.com/dotnet/aspnet:8.0
+# 4. Use the .NET 10.0 runtime image for the final deployment
+FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
 COPY --from=build /app/out .
 
