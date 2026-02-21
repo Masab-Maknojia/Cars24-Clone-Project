@@ -214,7 +214,8 @@ const Header = () => {
 
       {/* Mobile Dropdown Menu */}
       {mobileMenuOpen && (
-        <div className="lg:hidden absolute top-full left-0 w-full bg-white shadow-lg z-50 flex flex-col p-4 space-y-4 border-t">
+        <div className="lg:hidden absolute top-full left-0 w-full bg-white shadow-lg z-50 flex flex-col p-4 space-y-4 border-t max-h-[85vh] overflow-y-auto">
+          {/* Main Navigation Links */}
           {navItems.map((item) => (
             <Link
               key={item.name}
@@ -225,23 +226,54 @@ const Header = () => {
               {item.name}
             </Link>
           ))}
+          
           <div className="border-t pt-4 mt-2">
-            {user ? (
-              <button 
-                onClick={() => { logout(); setMobileMenuOpen(false); }} 
-                className="font-semibold text-red-600 w-full text-left"
-              >
-                Sign Out ({user.fullName})
-              </button>
-            ) : (
-              <Link 
-                href="/login" 
-                className="font-semibold text-orange-500 block"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Log In / Sign Up
-              </Link>
-            )}
+            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">
+              Account & More
+            </div>
+            
+            {/* Map over the menu items (Wallet, Appointments, etc.) */}
+            <div className="flex flex-col space-y-4 mb-6">
+              {menuItems.map(({ label, icon: Icon, link }) => (
+                <Link 
+                  key={label} 
+                  href={link} 
+                  className="flex items-center gap-3 text-gray-700 hover:text-orange-500"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Icon className="h-5 w-5 text-gray-400" />
+                  <span className="font-medium">{label}</span>
+                </Link>
+              ))}
+            </div>
+
+            <div className="border-t pt-4">
+              {user ? (
+                <div className="flex flex-col space-y-4">
+                  <Link 
+                    href="/profile" 
+                    className="font-semibold text-gray-900 hover:text-orange-500"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Profile Settings
+                  </Link>
+                  <button 
+                    onClick={() => { logout(); setMobileMenuOpen(false); }} 
+                    className="font-semibold text-red-600 w-full text-left"
+                  >
+                    Sign Out ({user.fullName})
+                  </button>
+                </div>
+              ) : (
+                <Link 
+                  href="/login" 
+                  className="font-semibold text-orange-500 block"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Log In / Sign Up
+                </Link>
+              )}
+            </div>
           </div>
         </div>
       )}

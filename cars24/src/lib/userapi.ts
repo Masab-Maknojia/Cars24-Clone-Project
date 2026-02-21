@@ -6,7 +6,7 @@ export const signup = async (
   password: string,
   userData: { fullName: string; phone: string }
 ) => {
-  const response = await fetch(`${API_BASE_URL}/signup`, {
+  const response = await fetch(`${API_BASE_URL}/UserAuth/signup`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -21,7 +21,7 @@ export const signup = async (
 };
 
 export const login = async (email: string, password: string) => {
-  const response = await fetch(`${API_BASE_URL}/login`, {
+  const response = await fetch(`${API_BASE_URL}/UserAuth/login`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -35,7 +35,7 @@ export const login = async (email: string, password: string) => {
 };
 
 export const getUserById = async (userId: string) => {
-  const response = await fetch(`${API_BASE_URL}/${userId}`);
+  const response = await fetch(`${API_BASE_URL}/UserAuth/${userId}`);
   if (!response.ok) {
     throw new Error("Failed to fetch user");
   }
@@ -43,7 +43,7 @@ export const getUserById = async (userId: string) => {
 };
 
 export const saveFcmToken = async (userId: string, token: string) => {
-  const response = await fetch(`${API_BASE_URL}/fcm-token`, {
+  const response = await fetch(`${API_BASE_URL}/UserAuth/fcm-token`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -56,7 +56,7 @@ export const saveFcmToken = async (userId: string, token: string) => {
 };
 
 export const updateUserPreferences = async (userId: string, preferences: any) => {
-  const response = await fetch(`${API_BASE_URL}/${userId}/preferences`, {
+  const response = await fetch(`${API_BASE_URL}/UserAuth/${userId}/preferences`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
