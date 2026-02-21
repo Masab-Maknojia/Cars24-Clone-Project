@@ -4,6 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { getcarByid, getServiceCenters } from "@/lib/Carapi"; 
 import { createAppointment } from "@/lib/Appointmentapi";
 import { getWalletDetails, debitWallet, triggerReferralBonus } from "@/lib/Walletapi"; 
+import { sendLocalNotification } from "@/lib/utils";
 import { toast } from "sonner";
 import { Calendar, Clock, MapPin, Car, Info, MessageCircle, Wallet, CreditCard } from "lucide-react"; 
 import ChatModal from "@/components/ChatModel"; 
@@ -105,12 +106,10 @@ const BookAppointmentPage = () => {
         console.error("Referral bonus check failed", err);
       }
 
-      if ("Notification" in window && Notification.permission === "granted") {
-         new Notification("Appointment Confirmed!", {
-           body: `Your visit for ${formData.date} at ${formData.time} is booked.`,
-           icon: "/favicon.ico"
-         });
-      }
+      await sendLocalNotification(
+        "Appointment Confirmed!", 
+        `Your visit for ${formData.date} at ${formData.time} is booked.`
+      );
 
       toast.success("Appointment booked successfully!");
       router.push("/appointments");

@@ -3,6 +3,7 @@ import { Bell, Calendar, Car, LogOut, Settings, User as UserIcon } from "lucide-
 import { useRouter } from "next/router";
 import { useAuth } from "@/context/AuthContext";
 import { updateUserPreferences } from "@/lib/userapi";
+import { sendLocalNotification } from "@/lib/utils"; // <--- Imported the helper!
 import { toast } from "sonner";
 
 const ProfilePage = () => {
@@ -37,29 +38,12 @@ const ProfilePage = () => {
 
     if (permission === "granted") {
       try {
-        if ("serviceWorker" in navigator) {
-          let registration = await navigator.serviceWorker.getRegistration("/");
-          if (!registration) {
-            registration = await navigator.serviceWorker.register("/firebase-messaging-sw.js", { scope: "/" });
-          }
-          
-          if (registration) {
-            await navigator.serviceWorker.ready;
-            await registration.showNotification("Test Notification", {
-              body: "If you see this, your System Notifications are working!",
-              icon: "/favicon.ico",
-            });
-            toast.success("Test sent via Service Worker!");
-            return;
-          }
-        }
+        await sendLocalNotification(
+          "Test Notification", 
+          "If you see this, your System Notifications are working!"
+        );
 
-        new Notification("Test Notification", {
-          body: "If you see this, your System Notifications are working!",
-          icon: "/favicon.ico",
-        });
-        toast.success("Test sent! Check your taskbar/notification center.");
-
+        toast.success("Test sent successfully!");
       } catch (e: any) {
         console.error("Notification Error:", e);
         toast.error("Failed to create notification. Check Console.");

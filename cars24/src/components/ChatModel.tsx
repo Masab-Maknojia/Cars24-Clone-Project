@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { X, Send } from "lucide-react";
 import { toast } from "sonner";
 import { sendMessage } from "@/lib/Chatapi";
+import { sendLocalNotification } from "@/lib/utils"; // <--- Imported our new helper!
 
 interface ChatModalProps {
   isOpen: boolean;
@@ -29,6 +30,11 @@ const ChatModel = ({ isOpen, onClose, senderId, receiverId, carName }: ChatModal
         timestamp: new Date().toISOString(),
       });
       
+      await sendLocalNotification(
+        "Message Sent!", 
+        `Your message regarding the ${carName} has been delivered.`
+      );
+
       toast.success("Message sent to seller!");
       setMessage("");
       onClose();
