@@ -12,7 +12,6 @@ public class BookingController : ControllerBase
     private readonly UserService _userService;
     private readonly CarService _carService;
 
-    // DTO class defined here for returning combined data
     public class BookingDto
     {
         public required Booking Booking { get; set; }
@@ -27,18 +26,21 @@ public class BookingController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateAppointment([FromQuery] string userId, [FromBody] Booking booking)
+    public async Task<IActionResult> CreateBooking([FromQuery] string userId, [FromBody] Booking booking)
     {
         if (booking == null || string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(booking.CarId))
             return BadRequest("UserId and CarId are required.");
 
+        // 1. Save the new detailed booking
         await _bookingService.CreateAsync(booking);
-
+        
         var user = await _userService.GetByIdAsync(userId);
         if (user == null) return NotFound("User not found");
 
-        if (user.BookingId == null) user.BookingId = new List<string>();
+        if (user.BookingId == null) 
+            user.BookingId = new List<string>();
         
+        // 2. Map it to the User's profile
         user.BookingId.Add(booking.Id!); 
         
         await _userService.UpdateAsync(user.Id!, user);
@@ -79,6 +81,9 @@ public class BookingController : ControllerBase
                 }
             }
         }
+        
+        // Put the newest bookings at the top!
+        results.Reverse(); 
         return Ok(results);
     }
 }
