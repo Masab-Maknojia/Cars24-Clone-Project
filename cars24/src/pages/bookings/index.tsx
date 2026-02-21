@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-
 import {
   Calendar,
   Clock,
@@ -19,6 +18,7 @@ import {
   Landmark,
   CreditCard,
   DollarSign,
+  ExternalLink, // <--- Added this icon
 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
@@ -53,6 +53,7 @@ const PurchasedCarsPage = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [purchasedCars, setpurchasedCars] = useState<any>(null);
+  
   useEffect(() => {
     const fetchpurchasedCars = async () => {
       try {
@@ -69,6 +70,7 @@ const PurchasedCarsPage = () => {
 
     fetchpurchasedCars();
   }, [user]);
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -76,11 +78,12 @@ const PurchasedCarsPage = () => {
       </div>
     );
   }
-  if (!purchasedCars) {
+  if (!purchasedCars || purchasedCars.length === 0) {
     return (
-      <div className="text-center mt-10 text-red-500">Boooking not found.</div>
+      <div className="text-center mt-10 text-red-500">Booking not found.</div>
     );
   }
+  
   const formatPrice = (price: string) => {
     return "₹ " + parseInt(price).toLocaleString("en-IN");
   };
@@ -93,8 +96,9 @@ const PurchasedCarsPage = () => {
         </h1>
         <p className="text-gray-600">Thank you for your purchase!</p>
       </div>
-      {purchasedCars.map((data: any) => (
-        <div className="max-w-5xl mx-auto bg-gray-50 rounded-lg overflow-hidden shadow-xl">
+      
+      {purchasedCars.map((data: any, idx: number) => (
+        <div key={idx} className="max-w-5xl mx-auto bg-gray-50 rounded-lg overflow-hidden shadow-xl mb-8">
           <div className="bg-blue-900 text-white p-6 rounded-t-lg">
             <div className="flex justify-between items-start">
               <div>
@@ -136,92 +140,105 @@ const PurchasedCarsPage = () => {
                 </div>
 
                 {/* Car Details */}
-                <div className="md:w-3/5">
-                  <h2 className="text-2xl font-bold text-gray-800 mb-2">
-                    {data.car.title}
-                  </h2>
-                  <p className="text-gray-600 mb-4">{data.car.location}</p>
+                <div className="md:w-3/5 flex flex-col justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                      {data.car.title}
+                    </h2>
+                    <p className="text-gray-600 mb-4">{data.car.location}</p>
 
-                  <div className="flex flex-col sm:flex-row gap-4 mb-6">
-                    <div className="bg-blue-50 p-3 rounded-lg">
-                      <p className="text-sm text-blue-700">Price</p>
-                      <p className="text-xl font-bold text-blue-900">
-                        {formatPrice(data.car.price)}
-                      </p>
-                    </div>
-                    {data.car.emi && (
-                      <div className="bg-amber-50 p-3 rounded-lg">
-                        <p className="text-sm text-amber-700">EMI from</p>
-                        <p className="text-xl font-bold text-amber-900">
-                          ₹ {parseInt(data.car.emi).toLocaleString("en-IN")}
-                          /month
+                    <div className="flex flex-col sm:flex-row gap-4 mb-6">
+                      <div className="bg-blue-50 p-3 rounded-lg">
+                        <p className="text-sm text-blue-700">Price</p>
+                        <p className="text-xl font-bold text-blue-900">
+                          {formatPrice(data.car.price)}
                         </p>
                       </div>
-                    )}
+                      {data.car.emi && (
+                        <div className="bg-amber-50 p-3 rounded-lg">
+                          <p className="text-sm text-amber-700">EMI from</p>
+                          <p className="text-xl font-bold text-amber-900">
+                            ₹ {parseInt(data.car.emi).toLocaleString("en-IN")}
+                            /month
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Car Specifications */}
+                    <h3 className="text-lg font-semibold text-gray-800 mb-3">
+                      Specifications
+                    </h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+                      <div className="flex items-center">
+                        <Calendar className="w-4 h-4 mr-2 text-blue-600" />
+                        <span className="text-gray-700">
+                          {data.car.specs.year}
+                        </span>
+                      </div>
+                      <div className="flex items-center">
+                        <Gauge className="w-4 h-4 mr-2 text-blue-600" />
+                        <span className="text-gray-700">
+                          {data.car.specs.km} km
+                        </span>
+                      </div>
+                      <div className="flex items-center">
+                        <Fuel className="w-4 h-4 mr-2 text-blue-600" />
+                        <span className="text-gray-700">
+                          {data.car.specs.fuel}
+                        </span>
+                      </div>
+                      <div className="flex items-center">
+                        <Settings className="w-4 h-4 mr-2 text-blue-600" />
+                        <span className="text-gray-700">
+                          {data.car.specs.transmission}
+                        </span>
+                      </div>
+                      <div className="flex items-center">
+                        <User className="w-4 h-4 mr-2 text-blue-600" />
+                        <span className="text-gray-700">
+                          {data.car.specs.owner}
+                        </span>
+                      </div>
+                      <div className="flex items-center">
+                        <Shield className="w-4 h-4 mr-2 text-blue-600" />
+                        <span className="text-gray-700">
+                          {data.car.specs.insurance}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Highlights and Features */}
+                    <div className="flex flex-wrap gap-2 mt-4">
+                      {data.car.highlights.map((highlight: any, index: any) => (
+                        <span
+                          key={`highlight-${index}`}
+                          className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full"
+                        >
+                          {highlight}
+                        </span>
+                      ))}
+                      {data.car.features.map((feature: any, index: any) => (
+                        <span
+                          key={`feature-${index}`}
+                          className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full"
+                        >
+                          {feature}
+                        </span>
+                      ))}
+                    </div>
                   </div>
 
-                  {/* Car Specifications */}
-                  <h3 className="text-lg font-semibold text-gray-800 mb-3">
-                    Specifications
-                  </h3>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
-                    <div className="flex items-center">
-                      <Calendar className="w-4 h-4 mr-2 text-blue-600" />
-                      <span className="text-gray-700">
-                        {data.car.specs.year}
-                      </span>
-                    </div>
-                    <div className="flex items-center">
-                      <Gauge className="w-4 h-4 mr-2 text-blue-600" />
-                      <span className="text-gray-700">
-                        {data.car.specs.km} km
-                      </span>
-                    </div>
-                    <div className="flex items-center">
-                      <Fuel className="w-4 h-4 mr-2 text-blue-600" />
-                      <span className="text-gray-700">
-                        {data.car.specs.fuel}
-                      </span>
-                    </div>
-                    <div className="flex items-center">
-                      <Settings className="w-4 h-4 mr-2 text-blue-600" />
-                      <span className="text-gray-700">
-                        {data.car.specs.transmission}
-                      </span>
-                    </div>
-                    <div className="flex items-center">
-                      <User className="w-4 h-4 mr-2 text-blue-600" />
-                      <span className="text-gray-700">
-                        {data.car.specs.owner}
-                      </span>
-                    </div>
-                    <div className="flex items-center">
-                      <Shield className="w-4 h-4 mr-2 text-blue-600" />
-                      <span className="text-gray-700">
-                        {data.car.specs.insurance}
-                      </span>
-                    </div>
+                  {/* Add Details Button that points to view=booked */}
+                  <div className="mt-6 pt-4 border-t flex justify-end">
+                     <Link 
+                       href={`/buy-car/${data.car.id || data.booking.carId}?view=booked`}
+                       className="bg-blue-50 text-blue-700 font-semibold px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-100 transition-colors"
+                     >
+                       View Full Car Details <ExternalLink className="w-4 h-4" />
+                     </Link>
                   </div>
 
-                  {/* Highlights and Features */}
-                  <div className="flex flex-wrap gap-2 mt-4">
-                    {data.car.highlights.map((highlight: any, index: any) => (
-                      <span
-                        key={`highlight-${index}`}
-                        className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full"
-                      >
-                        {highlight}
-                      </span>
-                    ))}
-                    {data.car.features.map((feature: any, index: any) => (
-                      <span
-                        key={`feature-${index}`}
-                        className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full"
-                      >
-                        {feature}
-                      </span>
-                    ))}
-                  </div>
                 </div>
               </div>
             </div>

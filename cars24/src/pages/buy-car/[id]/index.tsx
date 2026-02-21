@@ -8,7 +8,9 @@ import { toast } from "sonner";
 
 const CarDetailsPage = () => {
   const router = useRouter();
-  const { id } = router.query;
+  const { id, view } = router.query;
+  const isBookedView = view === "booked";
+
   const { user } = useAuth();
   const [carDetails, setCarDetails] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -253,14 +255,26 @@ const CarDetailsPage = () => {
                 </div>
             </div>
 
-            <div className="space-y-4">
-              <Link 
-                href={`/bookappointment/${id}`}
-                className="block w-full bg-blue-600 text-white text-center py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
-              >
-                Buy Car
-              </Link>
-            </div>
+            {/* Conditional Buy Button Render */}
+            {!isBookedView ? (
+              <div className="space-y-4">
+                <Link 
+                  href={`/bookappointment/${id}`}
+                  className="block w-full bg-blue-600 text-white text-center py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
+                >
+                  Buy Car
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-4 mt-6">
+                <div className="w-full bg-green-50 border border-green-200 text-green-700 text-center py-3 rounded-lg font-semibold flex items-center justify-center gap-2">
+                  <CheckCircle2 className="w-5 h-5" />
+                  Car Successfully Booked
+                </div>
+              </div>
+            )}
+            {/* End of Conditional Render */}
+
           </div>
         </div>
         
