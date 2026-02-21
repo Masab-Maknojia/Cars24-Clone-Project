@@ -37,20 +37,23 @@ const ProfilePage = () => {
 
     if (permission === "granted") {
       try {
-        // Attempt 1: Service Worker (Strictly Required for Mobile Chrome/Android)
         if ("serviceWorker" in navigator) {
-          const registration = await navigator.serviceWorker.getRegistration();
+          let registration = await navigator.serviceWorker.getRegistration("/");
+          if (!registration) {
+            registration = await navigator.serviceWorker.register("/firebase-messaging-sw.js", { scope: "/" });
+          }
+          
           if (registration) {
+            await navigator.serviceWorker.ready;
             await registration.showNotification("Test Notification", {
               body: "If you see this, your System Notifications are working!",
               icon: "/favicon.ico",
             });
             toast.success("Test sent via Service Worker!");
-            return; // Exit here so it doesn't try to run the desktop version
+            return;
           }
         }
 
-        // Attempt 2: Standard Desktop API (If no Service Worker is found)
         new Notification("Test Notification", {
           body: "If you see this, your System Notifications are working!",
           icon: "/favicon.ico",
@@ -59,7 +62,7 @@ const ProfilePage = () => {
 
       } catch (e: any) {
         console.error("Notification Error:", e);
-        toast.error("Failed to create notification. Mobile requires SW.");
+        toast.error("Failed to create notification. Check Console.");
       }
     } else {
       toast.error("Permission denied. Reset browser permissions.");
@@ -75,12 +78,10 @@ const ProfilePage = () => {
       if (user) {
         const updatedUser = { ...user, preferences: prefs };
         
-        // Safely check if updateUser exists in context, otherwise fallback to local storage
         if (typeof updateUser === "function") {
           updateUser(updatedUser);
         }
         
-        // Update local storage directly so it doesn't crash if context is missing
         const storedUser = localStorage.getItem("cars24_user");
         if (storedUser) {
           const parsedUser = JSON.parse(storedUser);
