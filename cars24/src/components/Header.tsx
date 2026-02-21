@@ -109,7 +109,7 @@ const Header = () => {
           <button
             type="button"
             className="-m-2.5 inline-flex items-center justify-center rounded-md p-2.5 text-gray-700"
-            onClick={() => setMobileMenuOpen(true)}
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
             <span className="sr-only">Open main menu</span>
             <Menu className="h-6 w-6" aria-hidden="true" />
@@ -211,6 +211,40 @@ const Header = () => {
           </DropdownMenu>
         </div>
       </nav>
+
+      {/* Mobile Dropdown Menu */}
+      {mobileMenuOpen && (
+        <div className="lg:hidden absolute top-full left-0 w-full bg-white shadow-lg z-50 flex flex-col p-4 space-y-4 border-t">
+          {navItems.map((item) => (
+            <Link
+              key={item.name}
+              href={item.href}
+              className="font-semibold text-gray-900 hover:text-orange-500"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              {item.name}
+            </Link>
+          ))}
+          <div className="border-t pt-4 mt-2">
+            {user ? (
+              <button 
+                onClick={() => { logout(); setMobileMenuOpen(false); }} 
+                className="font-semibold text-red-600 w-full text-left"
+              >
+                Sign Out ({user.fullName})
+              </button>
+            ) : (
+              <Link 
+                href="/login" 
+                className="font-semibold text-orange-500 block"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Log In / Sign Up
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
     </header>
   );
 };
