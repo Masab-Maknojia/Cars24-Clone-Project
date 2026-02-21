@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 //const BASE_URL = "http://localhost:5203/api/Appointment";
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5203/api/Appointment";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5203/api";
 export const createAppointment = async (userid: string, appointment: any) => {
   const response = await fetch(`${API_BASE_URL}`, {
     method: "POST",

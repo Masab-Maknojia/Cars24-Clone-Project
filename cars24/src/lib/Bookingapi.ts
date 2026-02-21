@@ -1,5 +1,5 @@
 //const BASE_URL = "http://localhost:5203/api/Booking";
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5203/api/Booking";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5203/api";
 
 export const createBooking = async (userid: string, Booking: any) => {
   const response = await fetch(`${API_BASE_URL}?userId=${userid}`, {

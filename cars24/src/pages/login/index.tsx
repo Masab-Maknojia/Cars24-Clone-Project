@@ -18,6 +18,8 @@ const LoginPage = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5203/api";
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -28,7 +30,7 @@ const LoginPage = () => {
         toast.success("Welcome back!");
         router.push("/");
       } else {
-        const response = await fetch("http://localhost:5203/api/UserAuth/signup", {
+        const response = await fetch(`${API_BASE_URL}/UserAuth/signup`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
