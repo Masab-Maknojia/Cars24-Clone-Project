@@ -3,8 +3,9 @@ import { useRouter } from "next/router";
 import { useAuth } from "@/context/AuthContext";
 import { getcarByid, getServiceCenters } from "@/lib/Carapi"; 
 import { createAppointment } from "@/lib/Appointmentapi";
+import { createBooking } from "@/lib/Bookingapi"; // <--- Added the Bookings API!
 import { getWalletDetails, debitWallet, triggerReferralBonus } from "@/lib/Walletapi"; 
-import { sendLocalNotification } from "@/lib/utils";
+import { sendLocalNotification } from "@/lib/utils"; 
 import { toast } from "sonner";
 import { Calendar, Clock, MapPin, Car, Info, MessageCircle, Wallet, CreditCard } from "lucide-react"; 
 import ChatModal from "@/components/ChatModel"; 
@@ -83,6 +84,7 @@ const BookAppointmentPage = () => {
 
     setLoading(true);
     try {
+      // 1. Create the backend Appointment
       await createAppointment(user.id, {
         userId: user.id,
         carId: id as string,
@@ -92,6 +94,29 @@ const BookAppointmentPage = () => {
         status: "Upcoming"
       });
 
+      // ---------------------------------------------------------
+      // 2. CREATE THE BOOKING SO IT SHOWS IN YOUR DASHBOARD!
+      // ---------------------------------------------------------
+      try {
+        await createBooking(user.id, {
+          userId: user.id,
+          carId: id as string,
+          name: user.fullName || "Customer",
+          email: user.email || "N/A",
+          phone: "N/A", 
+          address: formData.location,
+          preferredDate: formData.date,
+          preferredTime: formData.time,
+          paymentMethod: formData.paymentMethod,
+          loanStatus: formData.paymentMethod === "Car Loan / Finance" ? "In Process" : "Approved",
+          downPayment: discountAmount > 0 ? discountAmount.toString() : "0",
+        });
+      } catch (bookingErr) {
+        console.error("Failed to sync to Bookings database", bookingErr);
+      }
+      // ---------------------------------------------------------
+
+      // Handle Wallet Deductions
       if (useWallet && discountAmount > 0) {
         await debitWallet(
             user.id, 
@@ -100,22 +125,24 @@ const BookAppointmentPage = () => {
         );
       }
 
+      // Handle Referral Bonus
       try {
         await triggerReferralBonus(user.id);
       } catch (err) {
         console.error("Referral bonus check failed", err);
       }
 
+      // Local Push Notification
       await sendLocalNotification(
-        "Appointment Confirmed!", 
+        "Car Booked Successfully!", 
         `Your visit for ${formData.date} at ${formData.time} is booked.`
       );
 
-      toast.success("Appointment booked successfully!");
-      router.push("/appointments");
+      toast.success("Car booked successfully!");
+      router.push("/bookings"); // <--- Redirects directly to the My Bookings page now!
     } catch (error) {
       console.error(error);
-      toast.error("Failed to book appointment");
+      toast.error("Failed to book car");
     } finally {
       setLoading(false);
     }
@@ -126,9 +153,9 @@ const BookAppointmentPage = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 text-black">
       <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">Schedule Inspection</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">Checkout & Schedule Inspection</h1>
         
-        <div className="bg-white shadow-xl rounded-lg overflow-hidden flex flex-col md:flex-row">
+        <div className="bg-white shadow-xl rounded-lg overflow-hidden flex flex-col md:flex-row border border-gray-100">
           {/* Car Info Section */}
           <div className="md:w-1/3 bg-blue-600 p-6 text-white flex flex-col justify-between">
             <div>
@@ -278,10 +305,10 @@ const BookAppointmentPage = () => {
                 />
               </div>
 
-              <div className="bg-blue-50 p-4 rounded-md flex items-start">
-                <Info className="w-5 h-5 text-blue-600 mr-2 mt-0.5" />
-                <p className="text-sm text-blue-800">
-                  You will receive a confirmation notification immediately after booking.
+              <div className="bg-blue-50 p-4 rounded-md flex items-start border border-blue-100">
+                <Info className="w-5 h-5 text-blue-600 mr-2 mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-blue-800 font-medium">
+                  Completing this step will instantly secure your booking and notify the seller.
                 </p>
               </div>
 
@@ -289,7 +316,7 @@ const BookAppointmentPage = () => {
                 <button
                   type="button"
                   onClick={() => router.back()}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 font-medium"
                 >
                   Cancel
                 </button>
@@ -297,7 +324,7 @@ const BookAppointmentPage = () => {
                 <button
                   type="button"
                   onClick={() => setIsChatOpen(true)}
-                  className="px-4 py-2 border border-blue-600 text-blue-600 rounded-md hover:bg-blue-50 flex items-center"
+                  className="px-4 py-2 border border-blue-600 text-blue-600 rounded-md hover:bg-blue-50 flex items-center font-medium shadow-sm"
                 >
                   <MessageCircle className="w-4 h-4 mr-2" />
                   Contact Seller
@@ -306,9 +333,9 @@ const BookAppointmentPage = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center"
+                  className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center font-bold shadow-md"
                 >
-                  {loading ? "Booking..." : "Confirm Appointment"}
+                  {loading ? "Processing..." : "Confirm Purchase"}
                 </button>
               </div>
             </form>

@@ -18,7 +18,7 @@ import {
   Landmark,
   CreditCard,
   DollarSign,
-  ExternalLink, // <--- Added this icon
+  ExternalLink,
 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
@@ -50,19 +50,26 @@ const PurchasedCarsPage = () => {
         return "bg-gray-500";
     }
   };
+
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [purchasedCars, setpurchasedCars] = useState<any>(null);
+  const [purchasedCars, setpurchasedCars] = useState<any[]>([]);
   
   useEffect(() => {
     const fetchpurchasedCars = async () => {
+      // FIX: Don't try to fetch until the user context is fully loaded!
+      if (!user) return; 
+      
       try {
-        if (user) {
-          const car = await getBookingbyuser(user?.id);
+        const car = await getBookingbyuser(user?.id);
+        if (car && car.length > 0) {
           setpurchasedCars(car);
+        } else {
+          setpurchasedCars([]);
         }
       } catch (error) {
         console.error(error);
+        setpurchasedCars([]);
       } finally {
         setLoading(false);
       }
@@ -73,14 +80,27 @@ const PurchasedCarsPage = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-gray-900" />
+      <div className="flex justify-center items-center min-h-screen bg-gray-100">
+        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-600" />
       </div>
     );
   }
+  
+  // FIX: Beautiful Empty State if no bookings exist
   if (!purchasedCars || purchasedCars.length === 0) {
     return (
-      <div className="text-center mt-10 text-red-500">Booking not found.</div>
+      <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
+        <div className="bg-white p-8 rounded-lg shadow-md text-center max-w-md">
+          <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Car className="w-10 h-10 text-blue-500" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-3">No Bookings Yet</h2>
+          <p className="text-gray-600 mb-8">You haven't purchased any cars yet. Browse our collection and find your dream car today!</p>
+          <Link href="/buy-car" className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition shadow-md">
+            Browse Cars
+          </Link>
+        </div>
+      </div>
     );
   }
   
@@ -98,7 +118,7 @@ const PurchasedCarsPage = () => {
       </div>
       
       {purchasedCars.map((data: any, idx: number) => (
-        <div key={idx} className="max-w-5xl mx-auto bg-gray-50 rounded-lg overflow-hidden shadow-xl mb-8">
+        <div key={idx} className="max-w-5xl mx-auto bg-gray-50 rounded-lg overflow-hidden shadow-xl mb-8 border border-gray-200">
           <div className="bg-blue-900 text-white p-6 rounded-t-lg">
             <div className="flex justify-between items-start">
               <div>
@@ -128,7 +148,7 @@ const PurchasedCarsPage = () => {
           </div>
 
           <div className="p-6">
-            <div className="bg-white p-6 rounded-lg shadow-md mb-6 transition-all duration-300 hover:shadow-lg">
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 mb-6 transition-all duration-300 hover:shadow-md">
               <div className="flex flex-col md:flex-row gap-6">
                 {/* Car Image */}
                 <div className="md:w-2/5 h-64 overflow-hidden rounded-lg">
@@ -148,14 +168,14 @@ const PurchasedCarsPage = () => {
                     <p className="text-gray-600 mb-4">{data.car.location}</p>
 
                     <div className="flex flex-col sm:flex-row gap-4 mb-6">
-                      <div className="bg-blue-50 p-3 rounded-lg">
+                      <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
                         <p className="text-sm text-blue-700">Price</p>
                         <p className="text-xl font-bold text-blue-900">
                           {formatPrice(data.car.price)}
                         </p>
                       </div>
                       {data.car.emi && (
-                        <div className="bg-amber-50 p-3 rounded-lg">
+                        <div className="bg-amber-50 p-3 rounded-lg border border-amber-100">
                           <p className="text-sm text-amber-700">EMI from</p>
                           <p className="text-xl font-bold text-amber-900">
                             ₹ {parseInt(data.car.emi).toLocaleString("en-IN")}
@@ -213,7 +233,7 @@ const PurchasedCarsPage = () => {
                       {data.car.highlights.map((highlight: any, index: any) => (
                         <span
                           key={`highlight-${index}`}
-                          className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full"
+                          className="bg-green-50 text-green-700 border border-green-200 text-xs px-2 py-1 rounded-md font-medium"
                         >
                           {highlight}
                         </span>
@@ -221,7 +241,7 @@ const PurchasedCarsPage = () => {
                       {data.car.features.map((feature: any, index: any) => (
                         <span
                           key={`feature-${index}`}
-                          className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full"
+                          className="bg-blue-50 text-blue-700 border border-blue-200 text-xs px-2 py-1 rounded-md font-medium"
                         >
                           {feature}
                         </span>
@@ -229,7 +249,7 @@ const PurchasedCarsPage = () => {
                     </div>
                   </div>
 
-                  {/* Add Details Button that points to view=booked */}
+                  {/* Smart Redirect to Car Page Without Buy Button */}
                   <div className="mt-6 pt-4 border-t flex justify-end">
                      <Link 
                        href={`/buy-car/${data.car.id || data.booking.carId}?view=booked`}
@@ -244,7 +264,7 @@ const PurchasedCarsPage = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 mb-6">
                 <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
                   <User className="w-5 h-5 mr-2 text-blue-600" />
                   Customer Details
@@ -300,13 +320,13 @@ const PurchasedCarsPage = () => {
                   </div>
                 </div>
               </div>
-              <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 mb-6">
                 <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
                   <DollarSign className="w-5 h-5 mr-2 text-blue-600" />
                   Payment Details
                 </h2>
 
-                <div className="bg-gray-50 p-4 rounded-lg mb-4">
+                <div className="bg-gray-50 p-4 rounded-lg mb-4 border border-gray-200">
                   <div className="flex justify-between items-center mb-3">
                     <span className="text-gray-600">Car Price</span>
                     <span className="font-semibold">
@@ -317,7 +337,7 @@ const PurchasedCarsPage = () => {
                   {data.booking.downPayment && (
                     <div className="flex justify-between items-center mb-3">
                       <span className="text-gray-600">Down Payment</span>
-                      <span className="font-semibold">
+                      <span className="font-semibold text-green-600">
                         {formatPrice(data.booking.downPayment)}
                       </span>
                     </div>
@@ -336,7 +356,7 @@ const PurchasedCarsPage = () => {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="flex items-center bg-blue-50 p-3 rounded-lg">
+                  <div className="flex items-center bg-blue-50 p-3 rounded-lg border border-blue-100">
                     <CreditCard className="w-5 h-5 mr-3 text-blue-600" />
                     <div>
                       <p className="text-sm text-gray-500">Payment Method</p>
@@ -346,7 +366,7 @@ const PurchasedCarsPage = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center bg-blue-50 p-3 rounded-lg">
+                  <div className="flex items-center bg-blue-50 p-3 rounded-lg border border-blue-100">
                     <Landmark className="w-5 h-5 mr-3 text-blue-600" />
                     <div>
                       <p className="text-sm text-gray-500">Financing</p>
@@ -357,17 +377,16 @@ const PurchasedCarsPage = () => {
               </div>
             </div>
           </div>
-          <div className="bg-gray-100 p-4 text-center text-gray-500 text-sm">
+          <div className="bg-gray-100 p-4 text-center text-gray-500 text-sm border-t border-gray-200">
             <p>
-              Thank you for your purchase! For any queries, please contact our
-              customer support.
+              Thank you for your purchase! For any queries, please contact our customer support.
             </p>
           </div>
         </div>
       ))}
 
       <div className="mt-8 text-center text-gray-500 text-sm print:hidden">
-        <p>© 2025 Premium Auto Sales. All rights reserved.</p>
+        <p>© 2026 Premium Auto Sales. All rights reserved.</p>
       </div>
     </div>
   );
