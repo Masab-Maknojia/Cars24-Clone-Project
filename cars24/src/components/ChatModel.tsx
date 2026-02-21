@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { X, Send } from "lucide-react";
 import { toast } from "sonner";
 import { sendMessage } from "@/lib/Chatapi";
-import { sendLocalNotification } from "@/lib/utils"; // <--- Imported our new helper!
+import { sendLocalNotification } from "@/lib/utils";
+import { sendPushNotification } from "@/lib/Notificationapi"; // <--- Imported our new Push API!
 
 interface ChatModalProps {
   isOpen: boolean;
@@ -23,6 +24,7 @@ const ChatModel = ({ isOpen, onClose, senderId, receiverId, carName }: ChatModal
     setLoading(true);
 
     try {
+      // 1. Save the message to the database
       await sendMessage({
         senderId,
         receiverId,
@@ -30,10 +32,24 @@ const ChatModel = ({ isOpen, onClose, senderId, receiverId, carName }: ChatModal
         timestamp: new Date().toISOString(),
       });
       
+      // 2. Ping the BUYER locally (Confirmation receipt)
       await sendLocalNotification(
         "Message Sent!", 
         `Your message regarding the ${carName} has been delivered.`
       );
+
+      // 3. Ping the SELLER across the internet! (True Push Notification)
+      try {
+        await sendPushNotification(
+          receiverId, 
+          "New Buyer Message!", 
+          `Someone is interested in your ${carName}. They said: "${message.substring(0, 30)}..."`
+        );
+      } catch (pushErr) {
+        // We wrap this in a try/catch so the chat still succeeds even if the seller 
+        // hasn't enabled notifications on their phone yet!
+        console.error("Seller push notification skipped:", pushErr);
+      }
 
       toast.success("Message sent to seller!");
       setMessage("");
