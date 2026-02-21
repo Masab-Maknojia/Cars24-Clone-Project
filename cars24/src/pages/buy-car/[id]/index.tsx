@@ -4,6 +4,7 @@ import { getcarByid } from "@/lib/Carapi";
 import { Heart, Share2, MapPin, Calendar, Fuel, Gauge, User, Wrench, CheckCircle2, Star, TrendingUp, Info } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import { useLocation } from "@/context/LocationContext"; // <--- Added Location Context!
 import { toast } from "sonner";
 
 const CarDetailsPage = () => {
@@ -12,6 +13,8 @@ const CarDetailsPage = () => {
   const isBookedView = view === "booked";
 
   const { user } = useAuth();
+  const { city } = useLocation(); // <--- Pulled the user's actively selected city!
+  
   const [carDetails, setCarDetails] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -65,10 +68,50 @@ const CarDetailsPage = () => {
     : Math.round(price / 60).toLocaleString('en-IN');
 
 
-  const rawRecPrice = carDetails.recommendedPrice || carDetails.RecommendedPrice || price;
-  const recPrice = typeof rawRecPrice === 'number' 
-      ? rawRecPrice 
-      : Number(rawRecPrice?.toString().replace(/,/g, '') || price);
+  // ------------------------------------------------------------------
+  // DYNAMIC PRICING ENGINE (Uses User's Selected Location & Season!)
+  // ------------------------------------------------------------------
+  const calculateDynamicPrice = (basePrice: number, userCity: string, car: any) => {
+    let multiplier = 1.0;
+    const currentMonth = new Date().getMonth() + 1; // 1-12
+    const isMonsoon = currentMonth >= 6 && currentMonth <= 9;
+    
+    // Fallback to car location if user hasn't selected a city yet
+    const locationLower = (userCity || car.location || car.Location || "").toLowerCase();
+    const bodyType = (car.bodyType || car.BodyType || car.variant || car.Variant || displayTitle).toLowerCase();
+    
+    const isHillyOrRainy = locationLower.includes("mumbai") || locationLower.includes("pune") || locationLower.includes("shimla") || locationLower.includes("dehradun");
+    const isMetro = locationLower.includes("delhi") || locationLower.includes("bangalore") || locationLower.includes("mumbai") || locationLower.includes("chennai") || locationLower.includes("hyderabad");
+    
+    // SUVs and Off-road vehicles increase during monsoon or in hilly/rainy regions
+    if ((bodyType.includes("suv") || bodyType.includes("off-road") || bodyType.includes("jeep")) && (isMonsoon || isHillyOrRainy)) {
+        multiplier += 0.05;
+    }
+    
+    // Small hatchbacks drop in value in metro areas (traffic preference / fuel spikes)
+    if (bodyType.includes("hatchback") && isMetro) {
+        multiplier -= 0.03;
+    }
+    
+    // Convertibles drop in winter, rise in summer
+    if (bodyType.includes("convertible")) {
+        if (currentMonth >= 11 || currentMonth <= 2) multiplier -= 0.04;
+        else if (currentMonth >= 3 && currentMonth <= 5) multiplier += 0.03;
+    }
+
+    // Safety net: If no strict rules matched, apply a baseline regional fluctuation 
+    // so the Recommended Price is NEVER perfectly flat compared to the base price!
+    if (multiplier === 1.0) {
+        if (isMetro) multiplier += 0.015; // +1.5% premium in big cities
+        else multiplier -= 0.01;          // -1.0% drop in rural areas
+    }
+
+    const calculatedPrice = basePrice * multiplier;
+    return Math.round(calculatedPrice / 500) * 500; // Round to nearest 500 for clean UI
+  };
+
+  const recPrice = calculateDynamicPrice(price, city, carDetails);
+  // ------------------------------------------------------------------
 
 
   const getMaintenanceEstimate = (car: any) => {
@@ -149,7 +192,6 @@ const CarDetailsPage = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Left Column: Images */}
           <div className="space-y-4">
             <div className="aspect-video bg-gray-200 rounded-lg overflow-hidden relative">
               <img
@@ -168,7 +210,6 @@ const CarDetailsPage = () => {
             </div>
           </div>
 
-          {/* Right Column: Details */}
           <div className="bg-white p-6 rounded-lg shadow-sm">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">{displayTitle}</h1>
             
@@ -189,16 +230,15 @@ const CarDetailsPage = () => {
               ₹ {price.toLocaleString('en-IN')}
             </div>
 
-            {/* Recommended Price Display */}
-            {recPrice > 0 && (
+            {/* Recommended Price Display (Now perfectly dynamic!) */}
+            {recPrice !== price && (
                <div className="mb-4 flex items-center gap-2 text-sm text-emerald-700 bg-emerald-50 w-fit px-3 py-2 rounded-md border border-emerald-100">
                  <TrendingUp className="w-4 h-4" />
                  <span className="font-semibold">Recommended Market Price: ₹ {recPrice.toLocaleString('en-IN')}</span>
                  <div className="group relative ml-1">
                     <Info className="w-4 h-4 text-emerald-500 cursor-pointer" />
-                    {/* Tooltip */}
                     <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden w-64 rounded bg-gray-800 p-2 text-xs text-white shadow-lg group-hover:block z-50">
-                      This price is dynamically adjusted by our pricing engine based on regional demand and seasonal trends.
+                      This price is dynamically adjusted by our pricing engine based on your selected region ({city || "Default"}) and seasonal trends.
                     </div>
                  </div>
                </div>
@@ -239,7 +279,6 @@ const CarDetailsPage = () => {
               </div>
             </div>
 
-            {/* Dynamic Maintenance Component */}
             <div className={`${est.bgColor} border ${est.borderColor} p-4 rounded-lg flex justify-between items-center mb-8`}>
                 <div>
                     <h3 className={`${est.color} font-bold flex items-center gap-2`}>
@@ -255,7 +294,6 @@ const CarDetailsPage = () => {
                 </div>
             </div>
 
-            {/* Conditional Buy Button Render */}
             {!isBookedView ? (
               <div className="space-y-4">
                 <Link 
@@ -273,12 +311,9 @@ const CarDetailsPage = () => {
                 </div>
               </div>
             )}
-            {/* End of Conditional Render */}
-
           </div>
         </div>
         
-        {/* Car Overview */}
         <div className="mt-8 bg-white p-6 rounded-lg shadow-sm">
            <h2 className="text-xl font-bold mb-4">Car Overview</h2>
            <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-12">
@@ -313,11 +348,8 @@ const CarDetailsPage = () => {
            </div>
         </div>
 
-        {/* Features & Highlights */}
         {(carDetails.features?.length > 0 || carDetails.highlights?.length > 0) && (
           <div className="mt-8 bg-white p-6 rounded-lg shadow-sm">
-            
-            {/* Highlights */}
             {carDetails.highlights?.length > 0 && (
               <div className="mb-8">
                 <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
@@ -334,7 +366,6 @@ const CarDetailsPage = () => {
               </div>
             )}
 
-            {/* Features */}
             {carDetails.features?.length > 0 && (
               <div>
                 <h2 className="text-xl font-bold mb-4">Features</h2>
@@ -348,10 +379,8 @@ const CarDetailsPage = () => {
                 </div>
               </div>
             )}
-            
           </div>
         )}
-
       </main>
     </div>
   );
