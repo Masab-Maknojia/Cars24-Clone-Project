@@ -84,7 +84,6 @@ const BookAppointmentPage = () => {
 
     setLoading(true);
     try {
-      // 1. Create the backend Appointment
       await createAppointment(user.id, {
         userId: user.id,
         carId: id as string,
@@ -94,9 +93,6 @@ const BookAppointmentPage = () => {
         status: "Upcoming"
       });
 
-      // ---------------------------------------------------------
-      // 2. CREATE THE BOOKING SO IT SHOWS IN YOUR DASHBOARD!
-      // ---------------------------------------------------------
       try {
         await createBooking(user.id, {
           userId: user.id,
@@ -114,9 +110,7 @@ const BookAppointmentPage = () => {
       } catch (bookingErr) {
         console.error("Failed to sync to Bookings database", bookingErr);
       }
-      // ---------------------------------------------------------
 
-      // Handle Wallet Deductions
       if (useWallet && discountAmount > 0) {
         await debitWallet(
             user.id, 
@@ -125,21 +119,19 @@ const BookAppointmentPage = () => {
         );
       }
 
-      // Handle Referral Bonus
       try {
         await triggerReferralBonus(user.id);
       } catch (err) {
         console.error("Referral bonus check failed", err);
       }
 
-      // Local Push Notification
       await sendLocalNotification(
         "Car Booked Successfully!", 
         `Your visit for ${formData.date} at ${formData.time} is booked.`
       );
 
       toast.success("Car booked successfully!");
-      router.push("/bookings"); // <--- Redirects directly to the My Bookings page now!
+      router.push("/bookings");
     } catch (error) {
       console.error(error);
       toast.error("Failed to book car");

@@ -57,7 +57,6 @@ const PurchasedCarsPage = () => {
   
   useEffect(() => {
     const fetchpurchasedCars = async () => {
-      // FIX: Don't try to fetch until the user context is fully loaded!
       if (!user) return; 
       
       try {
@@ -85,8 +84,7 @@ const PurchasedCarsPage = () => {
       </div>
     );
   }
-  
-  // FIX: Beautiful Empty State if no bookings exist
+
   if (!purchasedCars || purchasedCars.length === 0) {
     return (
       <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
