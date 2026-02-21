@@ -1,29 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { useRouter } from "next/router"; // <--- Imported useRouter
+import { useRouter } from "next/router"; 
 import {
-  Calendar,
-  Clock,
-  MapPin,
-  Car,
-  Check,
-  User,
-  Settings,
-  Fuel,
-  Gauge,
-  Mail,
-  Phone,
-  Landmark,
-  CreditCard,
-  DollarSign,
-  ExternalLink,
-  Shield,
+  Calendar, Clock, MapPin, Car, Check, User, Settings, Fuel, Gauge, 
+  Mail, Phone, Landmark, CreditCard, DollarSign, ExternalLink, Shield
 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { getBookingbyuser } from "@/lib/Bookingapi";
 
 const PurchasedCarsPage = () => {
-  const router = useRouter(); // <--- Initialized the router
+  const router = useRouter(); 
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [purchasedCars, setpurchasedCars] = useState<any[]>([]);
@@ -34,7 +20,7 @@ const PurchasedCarsPage = () => {
       
       try {
         const car = await getBookingbyuser(user?.id);
-        if (car && car.length > 0) {
+        if (car && Array.isArray(car) && car.length > 0) {
           setpurchasedCars(car);
         } else {
           setpurchasedCars([]);
@@ -48,7 +34,7 @@ const PurchasedCarsPage = () => {
     };
 
     fetchpurchasedCars();
-  }, [user, router.asPath]); // <--- FIX: Added router.asPath to force a fresh fetch every time you land here!
+  }, [user, router.asPath]); 
 
   if (loading) {
     return (
@@ -75,8 +61,9 @@ const PurchasedCarsPage = () => {
     );
   }
   
-  const formatPrice = (price: string) => {
-    return "₹ " + parseInt(price).toLocaleString("en-IN");
+  const formatPrice = (price: string | number) => {
+    if (!price) return "₹ 0";
+    return "₹ " + parseInt(price.toString()).toLocaleString("en-IN");
   };
 
   return (
@@ -88,7 +75,17 @@ const PurchasedCarsPage = () => {
         <p className="text-gray-600">Thank you for your purchase!</p>
       </div>
       
-      {purchasedCars.map((data: any, idx: number) => (
+      {purchasedCars.map((data: any, idx: number) => {
+        // SAFE FALLBACKS: Prevents the page from going blank if a car is missing data
+        const safeCar = data.car || {};
+        const safeBooking = data.booking || {};
+        const carTitle = safeCar.title || safeCar.Title || "Vehicle Details Unavailable";
+        const carImage = safeCar.images && safeCar.images.length > 0 ? safeCar.images[0] : "https://via.placeholder.com/800x600?text=No+Image+Available";
+        const carPrice = safeCar.price !== undefined ? safeCar.price : (safeCar.Price || 0);
+        const carEmi = safeCar.emi || safeCar.Emi;
+        const specs = safeCar.specs || {};
+
+        return (
         <div key={idx} className="max-w-5xl mx-auto bg-gray-50 rounded-lg overflow-hidden shadow-xl mb-8 border border-gray-200">
           <div className="bg-blue-900 text-white p-6 rounded-t-lg">
             <div className="flex justify-between items-start">
@@ -98,17 +95,17 @@ const PurchasedCarsPage = () => {
                   <h1 className="text-2xl font-bold">Booking Confirmed</h1>
                 </div>
                 <p className="text-blue-200 mb-4">
-                  Booking ID: {data.booking.id.slice(-8).toUpperCase()}
+                  Booking ID: {safeBooking.id ? safeBooking.id.slice(-8).toUpperCase() : "PENDING"}
                 </p>
 
                 <div className="flex flex-col md:flex-row gap-4">
                   <div className="flex items-center">
                     <Calendar className="w-5 h-5 mr-2 text-blue-300" />
-                    <span>{data.booking.preferredDate}</span>
+                    <span>{safeBooking.preferredDate || "N/A"}</span>
                   </div>
                   <div className="flex items-center">
                     <Clock className="w-5 h-5 mr-2 text-blue-300" />
-                    <span>{data.booking.preferredTime}</span>
+                    <span>{safeBooking.preferredTime || "N/A"}</span>
                   </div>
                 </div>
               </div>
@@ -121,115 +118,78 @@ const PurchasedCarsPage = () => {
           <div className="p-6">
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 mb-6 transition-all duration-300 hover:shadow-md">
               <div className="flex flex-col md:flex-row gap-6">
-                {/* Car Image */}
-                <div className="md:w-2/5 h-64 overflow-hidden rounded-lg">
+                {/* Car Image safely loaded */}
+                <div className="md:w-2/5 h-64 overflow-hidden rounded-lg bg-gray-200">
                   <img
-                    src={data.car.images[0]}
-                    alt={data.car.title}
+                    src={carImage}
+                    alt={carTitle}
                     className="w-full h-full object-cover transform transition-transform duration-700 hover:scale-105"
                   />
                 </div>
 
-                {/* Car Details */}
                 <div className="md:w-3/5 flex flex-col justify-between">
                   <div>
                     <h2 className="text-2xl font-bold text-gray-800 mb-2">
-                      {data.car.title}
+                      {carTitle}
                     </h2>
-                    <p className="text-gray-600 mb-4">{data.car.location}</p>
+                    <p className="text-gray-600 mb-4">{safeCar.location || "Location N/A"}</p>
 
                     <div className="flex flex-col sm:flex-row gap-4 mb-6">
                       <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
                         <p className="text-sm text-blue-700">Price</p>
                         <p className="text-xl font-bold text-blue-900">
-                          {formatPrice(data.car.price)}
+                          {formatPrice(carPrice)}
                         </p>
                       </div>
-                      {data.car.emi && (
+                      {carEmi && (
                         <div className="bg-amber-50 p-3 rounded-lg border border-amber-100">
-                          <p className="text-sm text-amber-700">EMI from</p>
+                          <p className="text-sm text-amber-700">EMI</p>
                           <p className="text-xl font-bold text-amber-900">
-                            ₹ {parseInt(data.car.emi).toLocaleString("en-IN")}
-                            /month
+                            {formatPrice(carEmi)} / month
                           </p>
                         </div>
                       )}
                     </div>
 
-                    {/* Car Specifications */}
                     <h3 className="text-lg font-semibold text-gray-800 mb-3">
                       Specifications
                     </h3>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
                       <div className="flex items-center">
                         <Calendar className="w-4 h-4 mr-2 text-blue-600" />
-                        <span className="text-gray-700">
-                          {data.car.specs.year}
-                        </span>
+                        <span className="text-gray-700">{specs.year || "N/A"}</span>
                       </div>
                       <div className="flex items-center">
                         <Gauge className="w-4 h-4 mr-2 text-blue-600" />
-                        <span className="text-gray-700">
-                          {data.car.specs.km} km
-                        </span>
+                        <span className="text-gray-700">{specs.km || "0"} km</span>
                       </div>
                       <div className="flex items-center">
                         <Fuel className="w-4 h-4 mr-2 text-blue-600" />
-                        <span className="text-gray-700">
-                          {data.car.specs.fuel}
-                        </span>
+                        <span className="text-gray-700">{specs.fuel || "Petrol"}</span>
                       </div>
                       <div className="flex items-center">
                         <Settings className="w-4 h-4 mr-2 text-blue-600" />
-                        <span className="text-gray-700">
-                          {data.car.specs.transmission}
-                        </span>
+                        <span className="text-gray-700">{specs.transmission || "Manual"}</span>
                       </div>
                       <div className="flex items-center">
                         <User className="w-4 h-4 mr-2 text-blue-600" />
-                        <span className="text-gray-700">
-                          {data.car.specs.owner}
-                        </span>
+                        <span className="text-gray-700">{specs.owner || "1st Owner"}</span>
                       </div>
                       <div className="flex items-center">
                         <Shield className="w-4 h-4 mr-2 text-blue-600" />
-                        <span className="text-gray-700">
-                          {data.car.specs.insurance}
-                        </span>
+                        <span className="text-gray-700">{specs.insurance || "N/A"}</span>
                       </div>
-                    </div>
-
-                    {/* Highlights and Features */}
-                    <div className="flex flex-wrap gap-2 mt-4">
-                      {data.car.highlights.map((highlight: any, index: any) => (
-                        <span
-                          key={`highlight-${index}`}
-                          className="bg-green-50 text-green-700 border border-green-200 text-xs px-2 py-1 rounded-md font-medium"
-                        >
-                          {highlight}
-                        </span>
-                      ))}
-                      {data.car.features.map((feature: any, index: any) => (
-                        <span
-                          key={`feature-${index}`}
-                          className="bg-blue-50 text-blue-700 border border-blue-200 text-xs px-2 py-1 rounded-md font-medium"
-                        >
-                          {feature}
-                        </span>
-                      ))}
                     </div>
                   </div>
 
-                  {/* Add Details Button that points to view=booked */}
                   <div className="mt-6 pt-4 border-t flex justify-end">
                      <Link 
-                       href={`/buy-car/${data.car.id || data.booking.carId}?view=booked`}
+                       href={`/buy-car/${safeCar.id || safeBooking.carId || ''}?view=booked`}
                        className="bg-blue-50 text-blue-700 font-semibold px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-100 transition-colors"
                      >
                        View Full Car Details <ExternalLink className="w-4 h-4" />
                      </Link>
                   </div>
-
                 </div>
               </div>
             </div>
@@ -243,54 +203,36 @@ const PurchasedCarsPage = () => {
 
                 <div className="space-y-3">
                   <div className="flex items-start">
-                    <div className="w-8 flex-shrink-0 text-gray-500">
-                      <User className="w-4 h-4" />
-                    </div>
+                    <div className="w-8 flex-shrink-0 text-gray-500"><User className="w-4 h-4" /></div>
                     <div>
                       <p className="text-sm text-gray-500">Name</p>
-                      <p className="text-gray-800 font-medium">
-                        {data.booking.name}
-                      </p>
+                      <p className="text-gray-800 font-medium">{safeBooking.name || "N/A"}</p>
                     </div>
                   </div>
-
                   <div className="flex items-start">
-                    <div className="w-8 flex-shrink-0 text-gray-500">
-                      <Phone className="w-4 h-4" />
-                    </div>
+                    <div className="w-8 flex-shrink-0 text-gray-500"><Phone className="w-4 h-4" /></div>
                     <div>
                       <p className="text-sm text-gray-500">Phone</p>
-                      <p className="text-gray-800 font-medium">
-                        {data.booking.phone}
-                      </p>
+                      <p className="text-gray-800 font-medium">{safeBooking.phone || "N/A"}</p>
                     </div>
                   </div>
-
                   <div className="flex items-start">
-                    <div className="w-8 flex-shrink-0 text-gray-500">
-                      <Mail className="w-4 h-4" />
-                    </div>
+                    <div className="w-8 flex-shrink-0 text-gray-500"><Mail className="w-4 h-4" /></div>
                     <div>
                       <p className="text-sm text-gray-500">Email</p>
-                      <p className="text-gray-800 font-medium">
-                        {data.booking.email}
-                      </p>
+                      <p className="text-gray-800 font-medium">{safeBooking.email || "N/A"}</p>
                     </div>
                   </div>
-
                   <div className="flex items-start">
-                    <div className="w-8 flex-shrink-0 text-gray-500">
-                      <MapPin className="w-4 h-4" />
-                    </div>
+                    <div className="w-8 flex-shrink-0 text-gray-500"><MapPin className="w-4 h-4" /></div>
                     <div>
                       <p className="text-sm text-gray-500">Address</p>
-                      <p className="text-gray-800 font-medium">
-                        {data.booking.address}
-                      </p>
+                      <p className="text-gray-800 font-medium">{safeBooking.address || "N/A"}</p>
                     </div>
                   </div>
                 </div>
               </div>
+
               <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 mb-6">
                 <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
                   <DollarSign className="w-5 h-5 mr-2 text-blue-600" />
@@ -300,28 +242,22 @@ const PurchasedCarsPage = () => {
                 <div className="bg-gray-50 p-4 rounded-lg mb-4 border border-gray-200">
                   <div className="flex justify-between items-center mb-3">
                     <span className="text-gray-600">Car Price</span>
-                    <span className="font-semibold">
-                      {formatPrice(data.car.price)}
-                    </span>
+                    <span className="font-semibold">{formatPrice(carPrice)}</span>
                   </div>
 
-                  {data.booking.downPayment && (
+                  {safeBooking.downPayment && (
                     <div className="flex justify-between items-center mb-3">
-                      <span className="text-gray-600">Down Payment</span>
-                      <span className="font-semibold text-green-600">
-                        {formatPrice(data.booking.downPayment)}
+                      <span className="text-gray-600">Amount to Pay Today (Down Payment)</span>
+                      <span className="font-semibold text-green-600 bg-green-50 px-2 py-1 rounded">
+                        {formatPrice(safeBooking.downPayment)}
                       </span>
                     </div>
                   )}
 
                   <div className="border-t border-gray-200 pt-3 mt-3">
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-800 font-medium">
-                        Total Amount
-                      </span>
-                      <span className="text-xl font-bold text-blue-900">
-                        {formatPrice(data.car.price)}
-                      </span>
+                      <span className="text-gray-800 font-medium">Total Cost</span>
+                      <span className="text-xl font-bold text-blue-900">{formatPrice(carPrice)}</span>
                     </div>
                   </div>
                 </div>
@@ -331,9 +267,7 @@ const PurchasedCarsPage = () => {
                     <CreditCard className="w-5 h-5 mr-3 text-blue-600" />
                     <div>
                       <p className="text-sm text-gray-500">Payment Method</p>
-                      <p className="text-gray-800 font-medium">
-                        {data.booking.paymentMethod}
-                      </p>
+                      <p className="text-gray-800 font-medium text-sm">{safeBooking.paymentMethod || "N/A"}</p>
                     </div>
                   </div>
 
@@ -341,7 +275,7 @@ const PurchasedCarsPage = () => {
                     <Landmark className="w-5 h-5 mr-3 text-blue-600" />
                     <div>
                       <p className="text-sm text-gray-500">Financing</p>
-                      <p className="text-gray-800 font-medium">{data.booking.loanStatus}</p>
+                      <p className="text-gray-800 font-medium">{safeBooking.loanStatus || "N/A"}</p>
                     </div>
                   </div>
                 </div>
@@ -349,12 +283,11 @@ const PurchasedCarsPage = () => {
             </div>
           </div>
           <div className="bg-gray-100 p-4 text-center text-gray-500 text-sm border-t border-gray-200">
-            <p>
-              Thank you for your purchase! For any queries, please contact our customer support.
-            </p>
+            <p>Thank you for your purchase! For any queries, please contact our customer support.</p>
           </div>
         </div>
-      ))}
+        );
+      })}
 
       <div className="mt-8 text-center text-gray-500 text-sm print:hidden">
         <p>© 2026 Premium Auto Sales. All rights reserved.</p>

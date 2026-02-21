@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import { useAuth } from "@/context/AuthContext";
 import { getcarByid, getServiceCenters } from "@/lib/Carapi"; 
 import { createAppointment } from "@/lib/Appointmentapi";
-import { createBooking } from "@/lib/Bookingapi"; // <--- Added the Bookings API!
+import { createBooking } from "@/lib/Bookingapi"; 
 import { getWalletDetails, debitWallet, triggerReferralBonus } from "@/lib/Walletapi"; 
 import { sendLocalNotification } from "@/lib/utils"; 
 import { toast } from "sonner";
@@ -70,9 +70,14 @@ const BookAppointmentPage = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const basePrice = car?.price || 0;
+  const basePrice = car?.price || car?.Price || 0;
   const discountAmount = useWallet ? Math.min(walletBalance, basePrice) : 0;
   const finalPrice = basePrice - discountAmount;
+  
+  // Calculate dynamic EMI
+  const rawEmi = car?.emi || car?.Emi;
+  const calculatedEmi = rawEmi ? Number(rawEmi) : Math.round(basePrice / 60);
+  const displayEMI = calculatedEmi.toLocaleString('en-IN');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,6 +98,10 @@ const BookAppointmentPage = () => {
         status: "Upcoming"
       });
 
+      // SMART DOWN PAYMENT LOGIC
+      const isEmi = formData.paymentMethod.includes("EMI");
+      const finalDownPaymentAmount = isEmi ? calculatedEmi.toString() : finalPrice.toString();
+
       try {
         await createBooking(user.id, {
           userId: user.id,
@@ -104,8 +113,8 @@ const BookAppointmentPage = () => {
           preferredDate: formData.date,
           preferredTime: formData.time,
           paymentMethod: formData.paymentMethod,
-          loanStatus: formData.paymentMethod === "Car Loan / Finance" ? "In Process" : "Approved",
-          downPayment: discountAmount > 0 ? discountAmount.toString() : "0",
+          loanStatus: isEmi ? "In Process" : "Approved",
+          downPayment: finalDownPaymentAmount, // Saves full price OR monthly EMI accurately!
         });
       } catch (bookingErr) {
         console.error("Failed to sync to Bookings database", bookingErr);
@@ -148,7 +157,6 @@ const BookAppointmentPage = () => {
         <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">Checkout & Schedule Inspection</h1>
         
         <div className="bg-white shadow-xl rounded-lg overflow-hidden flex flex-col md:flex-row border border-gray-100">
-          {/* Car Info Section */}
           <div className="md:w-1/3 bg-blue-600 p-6 text-white flex flex-col justify-between">
             <div>
               <h2 className="text-xl font-bold mb-2">{car.year} {car.brand} {car.model}</h2>
@@ -183,7 +191,6 @@ const BookAppointmentPage = () => {
             </div>
           </div>
 
-          {/* Booking Form Section */}
           <div className="md:w-2/3 p-8">
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -255,7 +262,8 @@ const BookAppointmentPage = () => {
                     <option value="Pay Online (Credit/Debit Card)">Pay Online (Credit/Debit Card)</option>
                     <option value="UPI / Net Banking">UPI / Net Banking</option>
                     <option value="Pay at Center (Cash/Card)">Pay at Center (Cash/Card)</option>
-                    <option value="Car Loan / Finance">Car Loan / Finance</option>
+                    {/* DYNAMIC EMI DROPDOWN */}
+                    <option value={`EMI (₹${displayEMI}/Month)`}>EMI (₹{displayEMI}/Month)</option>
                   </select>
                 </div>
               </div>
