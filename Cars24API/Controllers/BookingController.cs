@@ -31,7 +31,6 @@ public class BookingController : ControllerBase
         if (booking == null || string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(booking.CarId))
             return BadRequest("UserId and CarId are required.");
 
-        // 1. Save the new detailed booking
         await _bookingService.CreateAsync(booking);
         
         var user = await _userService.GetByIdAsync(userId);
@@ -40,7 +39,6 @@ public class BookingController : ControllerBase
         if (user.BookingId == null) 
             user.BookingId = new List<string>();
         
-        // 2. Map it to the User's profile
         user.BookingId.Add(booking.Id!); 
         
         await _userService.UpdateAsync(user.Id!, user);
@@ -82,7 +80,6 @@ public class BookingController : ControllerBase
             }
         }
         
-        // Put the newest bookings at the top!
         results.Reverse(); 
         return Ok(results);
     }

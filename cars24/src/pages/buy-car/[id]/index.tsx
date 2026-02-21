@@ -4,7 +4,7 @@ import { getcarByid } from "@/lib/Carapi";
 import { Heart, Share2, MapPin, Calendar, Fuel, Gauge, User, Wrench, CheckCircle2, Star, TrendingUp, Info } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
-import { useLocation } from "@/context/LocationContext"; // <--- Added Location Context!
+import { useLocation } from "@/context/LocationContext";
 import { toast } from "sonner";
 
 const CarDetailsPage = () => {
@@ -13,7 +13,7 @@ const CarDetailsPage = () => {
   const isBookedView = view === "booked";
 
   const { user } = useAuth();
-  const { city } = useLocation(); // <--- Pulled the user's actively selected city!
+  const { city } = useLocation();
   
   const [carDetails, setCarDetails] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -76,42 +76,35 @@ const CarDetailsPage = () => {
     const currentMonth = new Date().getMonth() + 1; // 1-12
     const isMonsoon = currentMonth >= 6 && currentMonth <= 9;
     
-    // Fallback to car location if user hasn't selected a city yet
     const locationLower = (userCity || car.location || car.Location || "").toLowerCase();
     const bodyType = (car.bodyType || car.BodyType || car.variant || car.Variant || displayTitle).toLowerCase();
     
     const isHillyOrRainy = locationLower.includes("mumbai") || locationLower.includes("pune") || locationLower.includes("shimla") || locationLower.includes("dehradun");
     const isMetro = locationLower.includes("delhi") || locationLower.includes("bangalore") || locationLower.includes("mumbai") || locationLower.includes("chennai") || locationLower.includes("hyderabad");
     
-    // SUVs and Off-road vehicles increase during monsoon or in hilly/rainy regions
     if ((bodyType.includes("suv") || bodyType.includes("off-road") || bodyType.includes("jeep")) && (isMonsoon || isHillyOrRainy)) {
         multiplier += 0.05;
     }
-    
-    // Small hatchbacks drop in value in metro areas (traffic preference / fuel spikes)
+
     if (bodyType.includes("hatchback") && isMetro) {
         multiplier -= 0.03;
     }
     
-    // Convertibles drop in winter, rise in summer
     if (bodyType.includes("convertible")) {
         if (currentMonth >= 11 || currentMonth <= 2) multiplier -= 0.04;
         else if (currentMonth >= 3 && currentMonth <= 5) multiplier += 0.03;
     }
 
-    // Safety net: If no strict rules matched, apply a baseline regional fluctuation 
-    // so the Recommended Price is NEVER perfectly flat compared to the base price!
     if (multiplier === 1.0) {
-        if (isMetro) multiplier += 0.015; // +1.5% premium in big cities
-        else multiplier -= 0.01;          // -1.0% drop in rural areas
+        if (isMetro) multiplier += 0.015;
+        else multiplier -= 0.01;
     }
 
     const calculatedPrice = basePrice * multiplier;
-    return Math.round(calculatedPrice / 500) * 500; // Round to nearest 500 for clean UI
+    return Math.round(calculatedPrice / 500) * 500;
   };
 
   const recPrice = calculateDynamicPrice(price, city, carDetails);
-  // ------------------------------------------------------------------
 
 
   const getMaintenanceEstimate = (car: any) => {

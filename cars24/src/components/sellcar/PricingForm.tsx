@@ -1,5 +1,7 @@
-import { AlertCircle, CreditCard, DollarSign, Tag } from "lucide-react";
+import { AlertCircle, CreditCard, DollarSign, Tag, TrendingUp, Info } from "lucide-react";
 import React, { useEffect, useState } from "react";
+import { useLocation } from "@/context/LocationContext";
+
 type CarDetails = {
   id: string;
   title: string;
@@ -7,6 +9,7 @@ type CarDetails = {
   price: string;
   emi: string;
   location: string;
+  bodyType?: string;
   specs: {
     year: number;
     km: string;
@@ -18,6 +21,7 @@ type CarDetails = {
   features: string[];
   highlights: string[];
 };
+
 interface PricingFormprop {
   carDetails: CarDetails;
   updateCarDetails: (details: Partial<CarDetails>) => void;
@@ -32,20 +36,60 @@ const PricingForm: React.FC<PricingFormprop> = ({
   prevStep,
 }) => {
   const [isValid, setIsValid] = useState(false);
+  const { city } = useLocation();
+
   useEffect(() => {
     setIsValid(!!carDetails.price);
   }, [carDetails.price]);
 
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Format with commas and allow only numbers
     const value = e.target.value.replace(/[^\d]/g, "");
-    const formattedValue = value ? parseInt(value, 10).toLocaleString() : "";
+    const formattedValue = value ? parseInt(value, 10).toLocaleString('en-IN') : "";
     updateCarDetails({ price: formattedValue });
   };
 
   const handleEmiChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     updateCarDetails({ emi: e.target.value });
   };
+
+  const calculateDynamicPrice = (basePrice: number, userCity: string, car: any) => {
+    if (!basePrice) return 0;
+    
+    let multiplier = 1.0;
+    const currentMonth = new Date().getMonth() + 1;
+    const isMonsoon = currentMonth >= 6 && currentMonth <= 9;
+    
+    const locationLower = (car.location || userCity || "").toLowerCase();
+    const bodyType = (car.bodyType || car.title || "").toLowerCase();
+    
+    const isHillyOrRainy = locationLower.includes("mumbai") || locationLower.includes("pune") || locationLower.includes("shimla") || locationLower.includes("dehradun");
+    const isMetro = locationLower.includes("delhi") || locationLower.includes("bangalore") || locationLower.includes("mumbai") || locationLower.includes("chennai") || locationLower.includes("hyderabad");
+    
+    if ((bodyType.includes("suv") || bodyType.includes("off-road") || bodyType.includes("jeep")) && (isMonsoon || isHillyOrRainy)) {
+        multiplier += 0.05;
+    }
+    
+    if (bodyType.includes("hatchback") && isMetro) {
+        multiplier -= 0.03;
+    }
+    
+    if (bodyType.includes("convertible")) {
+        if (currentMonth >= 11 || currentMonth <= 2) multiplier -= 0.04;
+        else if (currentMonth >= 3 && currentMonth <= 5) multiplier += 0.03;
+    }
+
+    if (multiplier === 1.0) {
+        if (isMetro) multiplier += 0.015; 
+        else multiplier -= 0.01;          
+    }
+
+    const calculatedPrice = basePrice * multiplier;
+    return Math.round(calculatedPrice / 500) * 500; 
+  };
+
+  const rawPrice = carDetails.price ? parseInt(carDetails.price.replace(/[^\d]/g, ""), 10) : 0;
+  const recPrice = calculateDynamicPrice(rawPrice, city, carDetails);
+
   return (
     <form onSubmit={handleSubmit} className="space-y-8 py-4">
       <div>
@@ -82,6 +126,20 @@ const PricingForm: React.FC<PricingFormprop> = ({
               Setting the right price increases your chances of selling quickly
             </p>
           </div>
+
+          {/* DYNAMIC MARKET ESTIMATE UI */}
+          {recPrice > 0 && recPrice !== rawPrice && (
+             <div className="mt-3 flex items-center gap-2 text-sm text-emerald-700 bg-emerald-50 w-fit px-3 py-2 rounded-md border border-emerald-100">
+               <TrendingUp className="w-4 h-4" />
+               <span className="font-semibold">Est. Market Value: ₹ {recPrice.toLocaleString('en-IN')}</span>
+               <div className="group relative ml-1 flex items-center">
+                  <Info className="w-4 h-4 text-emerald-500 cursor-pointer" />
+                  <div className="absolute left-0 top-full mt-1 hidden w-64 rounded bg-gray-800 p-2 text-xs text-white shadow-lg group-hover:block z-50">
+                    This estimate is dynamically adjusted based on your car's profile, season, and regional market trends ({carDetails.location || city || "Default"}).
+                  </div>
+               </div>
+             </div>
+          )}
         </div>
 
         {/* EMI Section */}
@@ -178,13 +236,13 @@ const PricingForm: React.FC<PricingFormprop> = ({
         <button
           type="submit"
           disabled={!isValid}
-          className={`px-6 py-3 rounded-lg font-medium transition-all duration-300 ${
+          className={`px-6 py-3 rounded-lg font-medium transition-all duration-300 flex items-center gap-2 ${
             isValid
               ? "bg-blue-600 text-white hover:bg-blue-700"
               : "bg-gray-300 text-gray-500 cursor-not-allowed"
           }`}
         >
-          <DollarSign /> List My Car
+          <DollarSign className="w-5 h-5" /> List My Car
         </button>
       </div>
     </form>

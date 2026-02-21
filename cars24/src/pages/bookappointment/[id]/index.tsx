@@ -73,8 +73,6 @@ const BookAppointmentPage = () => {
   const basePrice = car?.price || car?.Price || 0;
   const discountAmount = useWallet ? Math.min(walletBalance, basePrice) : 0;
   const finalPrice = basePrice - discountAmount;
-  
-  // Calculate dynamic EMI
   const rawEmi = car?.emi || car?.Emi;
   const calculatedEmi = rawEmi ? Number(rawEmi) : Math.round(basePrice / 60);
   const displayEMI = calculatedEmi.toLocaleString('en-IN');
@@ -98,7 +96,6 @@ const BookAppointmentPage = () => {
         status: "Upcoming"
       });
 
-      // SMART DOWN PAYMENT LOGIC
       const isEmi = formData.paymentMethod.includes("EMI");
       const finalDownPaymentAmount = isEmi ? calculatedEmi.toString() : finalPrice.toString();
 
@@ -114,7 +111,7 @@ const BookAppointmentPage = () => {
           preferredTime: formData.time,
           paymentMethod: formData.paymentMethod,
           loanStatus: isEmi ? "In Process" : "Approved",
-          downPayment: finalDownPaymentAmount, // Saves full price OR monthly EMI accurately!
+          downPayment: finalDownPaymentAmount,
         });
       } catch (bookingErr) {
         console.error("Failed to sync to Bookings database", bookingErr);

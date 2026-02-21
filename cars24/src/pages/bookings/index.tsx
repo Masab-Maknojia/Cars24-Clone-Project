@@ -76,7 +76,6 @@ const PurchasedCarsPage = () => {
       </div>
       
       {purchasedCars.map((data: any, idx: number) => {
-        // SAFE FALLBACKS: Prevents the page from going blank if a car is missing data
         const safeCar = data.car || {};
         const safeBooking = data.booking || {};
         const carTitle = safeCar.title || safeCar.Title || "Vehicle Details Unavailable";
