@@ -68,7 +68,7 @@ const Header = () => {
             </div>
           </Link>
 
-          {/* Location Selector */}
+          {/* Desktop Location Selector */}
           <div className="hidden lg:block">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -215,6 +215,39 @@ const Header = () => {
       {/* Mobile Dropdown Menu */}
       {mobileMenuOpen && (
         <div className="lg:hidden absolute top-full left-0 w-full bg-white shadow-lg z-50 flex flex-col p-4 space-y-4 border-t max-h-[85vh] overflow-y-auto">
+          
+          {/* Mobile Location Selector */}
+          <div className="border-b pb-4 mb-2">
+            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+              Your Location
+            </div>
+            <div className="flex items-center gap-2 mb-3 text-orange-500 font-medium">
+              <MapPin className="h-5 w-5" />
+              <span>{city || "Select Location"}</span>
+            </div>
+            <button
+              onClick={() => { detectLocation(); setMobileMenuOpen(false); }}
+              className="w-full text-left flex items-center gap-2 py-2 text-blue-600 font-semibold mb-3"
+            >
+              <MapPin className="h-4 w-4" /> Detect my location
+            </button>
+            <div className="grid grid-cols-2 gap-2">
+              {topCities.map((cityName) => (
+                <button
+                  key={cityName}
+                  onClick={() => { updateCity(cityName); setMobileMenuOpen(false); }}
+                  className={`text-left px-3 py-2 rounded-md text-sm transition-colors ${
+                    city === cityName 
+                      ? 'bg-orange-100 text-orange-700 font-semibold' 
+                      : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  {cityName}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Main Navigation Links */}
           {navItems.map((item) => (
             <Link

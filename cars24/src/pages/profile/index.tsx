@@ -37,20 +37,27 @@ const ProfilePage = () => {
 
     if (permission === "granted") {
       try {
-        new Notification("Test Notification", {
-          body: "If you see this, your System Notifications are working!",
-          icon: "/favicon.ico",
-        });
+        if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
+          const registration = await navigator.serviceWorker.ready;
+          await registration.showNotification("Test Notification", {
+            body: "If you see this, your System Notifications are working!",
+            icon: "/favicon.ico",
+          });
+        } else {
+          new Notification("Test Notification", {
+            body: "If you see this, your System Notifications are working!",
+            icon: "/favicon.ico",
+          });
+        }
         toast.success("Test sent! Check your taskbar/notification center.");
       } catch (e) {
         console.error("Notification Error:", e);
         toast.error("Failed to create notification. Check console.");
       }
     } else {
-      toast.error("Permission denied. Reset browser permissions for localhost.");
+      toast.error("Permission denied. Reset browser permissions.");
     }
   };
-  // ---------------------------------
 
   const handleSavePreferences = async () => {
     if (!user?.id) return;
@@ -60,7 +67,17 @@ const ProfilePage = () => {
       
       if (user) {
         const updatedUser = { ...user, preferences: prefs };
-        updateUser(updatedUser);
+        
+        if (typeof updateUser === "function") {
+          updateUser(updatedUser);
+        }
+        
+        const storedUser = localStorage.getItem("cars24_user");
+        if (storedUser) {
+          const parsedUser = JSON.parse(storedUser);
+          parsedUser.preferences = prefs;
+          localStorage.setItem("cars24_user", JSON.stringify(parsedUser));
+        }
       }
 
       toast.success("Preferences saved successfully!");
