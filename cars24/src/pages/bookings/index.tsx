@@ -1,13 +1,10 @@
 import React, { useEffect, useState } from "react";
+import { useRouter } from "next/router"; // <--- Imported useRouter
 import {
   Calendar,
   Clock,
   MapPin,
   Car,
-  FileText,
-  PenTool as Tool,
-  Shield,
-  AlertCircle,
   Check,
   User,
   Settings,
@@ -19,38 +16,14 @@ import {
   CreditCard,
   DollarSign,
   ExternalLink,
+  Shield,
 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { getBookingbyuser } from "@/lib/Bookingapi";
 
 const PurchasedCarsPage = () => {
-  const getStatusBadgeColor = (status: string) => {
-    switch (status) {
-      case "delivered":
-        return "bg-green-100 text-green-800";
-      case "in_transit":
-        return "bg-yellow-100 text-yellow-800";
-      case "scheduled":
-        return "bg-blue-100 text-blue-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  const getLoanStatusColor = (status: string) => {
-    switch (status) {
-      case "Approved":
-        return "bg-green-500";
-      case "In Process":
-        return "bg-yellow-500";
-      case "Not Started":
-        return "bg-gray-500";
-      default:
-        return "bg-gray-500";
-    }
-  };
-
+  const router = useRouter(); // <--- Initialized the router
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [purchasedCars, setpurchasedCars] = useState<any[]>([]);
@@ -75,7 +48,7 @@ const PurchasedCarsPage = () => {
     };
 
     fetchpurchasedCars();
-  }, [user]);
+  }, [user, router.asPath]); // <--- FIX: Added router.asPath to force a fresh fetch every time you land here!
 
   if (loading) {
     return (
@@ -84,7 +57,7 @@ const PurchasedCarsPage = () => {
       </div>
     );
   }
-
+  
   if (!purchasedCars || purchasedCars.length === 0) {
     return (
       <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
@@ -247,7 +220,7 @@ const PurchasedCarsPage = () => {
                     </div>
                   </div>
 
-                  {/* Smart Redirect to Car Page Without Buy Button */}
+                  {/* Add Details Button that points to view=booked */}
                   <div className="mt-6 pt-4 border-t flex justify-end">
                      <Link 
                        href={`/buy-car/${data.car.id || data.booking.carId}?view=booked`}
